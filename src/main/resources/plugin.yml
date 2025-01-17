@@ -1,0 +1,4 @@
+name: 'OneMail'
+main: 'com.dakuo.onemail.Main'
+api-version: 1.13
+version: 1.0.0
