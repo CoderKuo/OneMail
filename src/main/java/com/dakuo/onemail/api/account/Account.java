@@ -1,8 +1,9 @@
 package com.dakuo.onemail.api.account;
 
 import com.dakuo.onemail.api.mail.Mail;
-import com.dakuo.onemail.api.mail.MailGroup;
+import com.dakuo.onemail.interal.OneMailManager;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,94 +11,104 @@ import java.util.UUID;
 /**
  * @author Index
  * */
-public interface Account {
+public class Account {
+
+    private final UUID id;
+    private final String name;
+
+    public Account(UUID id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
 
     /**
-     * @return UUID 获取账户UID
+     * @return List<String> 获取账户所有邮件组
      * */
-    UUID getId();
+    public List<String> getMailGroups(){
+        return OneMailManager.getService().getAccountGroups(id);
+    }
 
     /**
-     * @return List<MailGroup> 获取账户所有邮件组
+     * @return Optional<String> 获取账户默认邮件组
      * */
-    List<MailGroup> getMailGroups();
+    public Optional<String> getDefaultGroup(){
+        return OneMailManager.getService().getDefaultGroup(id);
+    }
 
     /**
-     * @return Optional<MailGroup> 获取账户默认邮件组
-     * */
-    Optional<MailGroup> getDefaultGroup();
-
-    /**
-     * @return Optional<MailGroup> 获取账户指定邮件组
-     * */
-    Optional<MailGroup> getMailGroup(String groupId);
-
-
-    /**
-     * @param groupId String 邮件组ID
-     * @param name String 邮件组名称
-     * 创建欣的邮件组
-     * */
-    void createMailGroup(String groupId, String name);
-
-    /**
-     * @return boolean 邮件组是否删除成功
-     * @param groupId String 邮件组ID
-     * 删除邮件组
-     * */
-    boolean removeMailGroup(String groupId);
-
-    /**
-     * @param receiver Account 接收者账户
      * @param groupId String 邮件组ID
      * @param mail Mail 邮件
      * 向接收者的邮件组ID发送邮件
      * */
-    void sendMail(Account receiver, String groupId, Mail mail);
+    public boolean sendMail(String groupId, Mail mail){
+        return OneMailManager.getService().sendMail(id,groupId,mail);
+    }
 
     /**
      * @param receiver Account 接收者账户
      * @param mail Mail 邮件
      * 向接收者默认邮件组发送邮件
      * */
-    void sendMail(Account receiver, Mail mail);
+    public boolean sendMail(Account receiver, Mail mail){
+        return OneMailManager.getService().sendMail(id,receiver.getDefaultGroup().orElse(null),mail);
+    }
 
     /**
      * @param includeRead boolean 是否包含已读邮件
      * @param groupId String 邮件组ID
      * @return List<Mail> 获取账户邮件组内邮件
      * */
-    List<Mail> getMails(String groupId, boolean includeRead);
+    public List<Mail> getMails(String groupId, boolean includeRead){
+        return OneMailManager.getService().getAccountGroupMails(id,groupId,includeRead);
+    }
 
     /**
      * @param mailId UUID 邮件ID
      * @return boolean 查询是否包含指定UUID的邮件
      * */
-    boolean hasMail(UUID mailId);
+    public boolean hasMail(UUID mailId){
+        return OneMailManager.getService().isMailExist(id,mailId);
+    }
 
     /**
      * @param mailId UUID 邮件ID
      * @return boolean 标记成功
      * 标记邮件已读
      * */
-    boolean markAsRead(UUID mailId);
+    public boolean markAsRead(UUID mailId){
+        return OneMailManager.getService().markMailRead(id,mailId);
+    }
 
     /**
      * 标记所有邮件已读
      * */
-    void markAllAsRead();
+    public void markAllAsRead(){
+        OneMailManager.getService().markAllMailRead(id);
+    }
 
     /**
      * @return List<UUID> 领取失败邮件UUID列表
      * 领取所有附件
      * */
-    List<UUID> claimAllAttachments();
+    public List<UUID> claimAllAttachments(){
+        return OneMailManager.getService().claimAllAttachments(id);
+    }
 
     /**
      * @param mailId UUID 邮件ID
      * @return boolean 领取成功
      * 领取邮件附件
      * */
-    boolean claimAttachments(UUID mailId);
+    public boolean claimAttachments(UUID mailId){
+        return OneMailManager.getService().claimAttachments(id,mailId);
+    }
 
 }

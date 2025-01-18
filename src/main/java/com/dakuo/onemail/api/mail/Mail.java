@@ -1,94 +1,91 @@
 package com.dakuo.onemail.api.mail;
 
-import com.dakuo.onemail.api.attachment.Attachment;
-import com.dakuo.onemail.api.attachment.AttachmentIdentifier;
+import com.dakuo.onemail.api.account.Account;
+import com.dakuo.onemail.interal.OneMailManager;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
  * @author INDEX
  * */
-public interface Mail {
+public class Mail {
 
-    /**
-     * @return UUID 返回邮件标识符
-     * */
-    UUID getUID();
+    private UUID uid;
 
-    /**
-     * @return Option<String> 获取邮件主题
-     * */
-    Optional<String> getSubject();
+    private String title;
+    private String subject; 
+    private List<String> content;
+    private List<Object> attachments;
 
-    /**
-     * @return String 返回邮件标题
-     * */
-    String getTitle();
+    private long sendTime;
+    private long readTime;
+    private long expireTime;
 
+    public Mail(String title, String subject, List<String> content, List<Object> attachments, long expireTime) {
+        this.uid = UUID.randomUUID();
+        this.title = title;
+        this.subject = subject;
+        this.content = content;
+        this.attachments = attachments;
+        this.sendTime = System.currentTimeMillis();
+        this.readTime = -1;
+        this.expireTime = expireTime;
+    }
 
-    /**
-     * @return List<String> 返回邮件正文
-     * */
-    List<String> getContent();
+    public UUID getUid() {
+        return uid;
+    }
 
-    /**
-     * @return UUID 获取发送者UID
-     * */
-    UUID getSender();
+    public String getTitle() {
+        return title;
+    }
 
-    /**
-     * @return List<UUID> 获取接收者UUID列表
-     * */
-    List<UUID> getReceivers();
+    public String getSubject() {
+        return subject;
+    }
 
-    /**
-     * @return Long 获取发送时间
-     * */
-    long getSendTime();
+    public List<String> getContent() {
+        return content;
+    }
 
-    /**
-     * @return Optional<Long> 获取邮件读取时间
-     * */
-    //使用Optional，防止未读取时，读取时间不存在的情况
-    Optional<Long> getReadTime();
+    public List<Object> getAttachments() {
+        return attachments;
+    }
 
-    /**
-     * @return Optional<Long> 获取邮件过期时间
-     * */
-    //使用Optional，处理永不过期邮件
-    Optional<Long> getExpireTime();
+    public long getSendTime() {
+        return sendTime;
+    }
 
-    void setReadTime(long readTime);
+    public long getReadTime() {
+        return readTime;
+    }
 
-    /**
-     * @return List<Attachment> 返回邮件附件列表
-     * */
-    List<Attachment> getAttachments();
+    public long getExpireTime() {
+        return expireTime;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public <T> boolean claimAttachment(int index, Account account) {
+        if (index < 0 || index >= attachments.size()) {
+            return false;
+        }
+        Object attachment = attachments.get(index);
+        if (attachment == null) {
+            return false;
+        }
+        Class<T> type = (Class<T>) attachment.getClass();
+        return OneMailManager.getAttachmentService(type).claim(account, attachment);
+    }
 
-    /**
-     * @param attachment 实例
-     * 删除附件
-     * */
-    void removeAttachment(Attachment attachment);
+    public boolean claimAllAttachments(Account account) {
+        boolean allClaimed = true;
+        for (int i = 0; i < attachments.size(); i++) {
+            if (!claimAttachment(i, account)) {
+                allClaimed = false;
+            }
+        }
+        return allClaimed;
+    }
 
-    /**
-     * @param attachment 实例
-     * 添加附件
-     * */
-    void addAttachment(Attachment attachment);
-
-    /**
-     * 检查是否包含指定类型的附件
-     * 忘了刚才怎么设计的了，脑抽一样就写上了 （
-     */
-    boolean hasAttachment(AttachmentIdentifier identifier);
-
-    /**
-     * @param identifier 标识符实例
-     * @return List<Attachment> 返回的附件实例
-     * 获取指定类型的所有附件
-     */
-    List<Attachment> getAttachments(AttachmentIdentifier identifier);
 }
